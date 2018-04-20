@@ -1,0 +1,20 @@
+html(lang='en')
+	head
+		title Express authentication
+	body
+		h2 Please login for Authentication
+		p Please provide <i>username</i> and <i>password</i>.
+		form(method='get')
+			p
+				label(for='username') Username:
+				input(type='text', name='name')
+			p
+				label(for='password') Password: 
+				input(type='password', name='password')
+			p
+				label(for='redirectURL') RedirectURL: </br>
+				textarea(rows="3" cols="50" id="redirect_url" name="redirect_url")
+			p
+				input(type='submit')
+			
+		

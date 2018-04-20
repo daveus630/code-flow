@@ -1,0 +1,26 @@
+html(lang='en')
+	head
+		title Express user registration
+	body
+		h2 User Registration
+		p Please provide details below
+		form(method='get')
+			p
+				label(for='email') email:
+				input(type='text', name='email')
+			p
+				label(for='username') Username:
+				input(type='text', name='username')
+			p
+				label(for='password') Password: 
+				input(type='password', name='password')
+			p
+				label(for='passwordConf') Confirm Password: 
+				input(type='password', name='passwordConf')
+			p
+				label(for='redirectURL') RedirectURL: </br>
+				textarea(rows="3" cols="50" id="redirect_url" name="redirect_url")
+			p
+				input(type='submit')
+			
+		
