@@ -1,7 +1,7 @@
 var express = require('express');
 var router = express.Router();
 var requestify = require('requestify');
-
+var request = require('request');
 /* GET home page. */
 router.get('/', function(req, res, next) {
   res.render('index', { title: 'Express' });
@@ -24,7 +24,7 @@ var errorHandler = require('../lib/errors/handler');
 
 // Require middleware
 var authorize = require('../lib/middleware/authorize');
-
+var xcode = '';
 
 /* GET 1. Issue Authorization Codes */
 router.get('/authorize', function(req, res, next) {
@@ -45,6 +45,10 @@ router.get('/authorize', function(req, res, next) {
   //     'Response type not supported'));
   // }
 
+  // if(!req.query.code) {
+  //   res.redirect('/auth');
+  // }
+
   if (!clientId) {
     // cancel the request
     next(new OAuthError('invalid_request',
@@ -54,20 +58,21 @@ router.get('/authorize', function(req, res, next) {
       Client.findOne({
         clientId: clientId
       }, function(err, client) { 
-        if (err) {
+        if (err) { 
           next(new OAuthError('invalid_client',
             'Invalid client provided, client malformed or client unknown', err));
         }
-
-        if (!client) {
-          next(new OAuthError('invalid_client',
-            'Invalid client provided, client malformed or client unknown'));
+        console.log("The Client new "+client);
+        if (!client) { //console.log("mali ang CLientId "+client);
+          //next(new OAuthError('invalid_client',
+            //'Invalid client provided, client malformed or client unknown'));
+          res.redirect('/login');
         }
 
-        // if (redirectUri !== client.redirectUri) {
-        //   next(new OAuthError('invalid_client',
-        //     'Invalid client provided, client malformed or client unknown'));
-        // }
+        //if (redirectUri !== client.redirectUri) {
+          //next(new OAuthError('invalid_client',
+             //'Invalid client provided, client malformed or client unknown'));
+        //}
 
         // if (scope !== client.scope) {
         //   next(new OAuthError('invalid_scope',
@@ -76,23 +81,56 @@ router.get('/authorize', function(req, res, next) {
         //console.log("The client ... "+client);
         var authCode = new AuthCode({
           clientId: clientId,
-          userId: client.userId,
-          redirectUri: client.redirectUri
+          //userId: client.userId,
+          //redirectUri: client.redirectUri
+          redirectUri: req.query.redirect_uri
         });
-        console.log("redirectUri here is..."+client.redirectUri);
+        //console.log("redirectUri here is..."+client.redirectUri); //google
         authCode.save();
-
+        //xcode = authCode.code;
         var response = {
           state: state,
           code: authCode.code
         };
         //console.log("client.userId = "+client.userId);
+        console.log("Token type is "+responseType);
+        if (redirectUri) {  console.log("if redirects..."+redirectUri);
+          //var redirect = redirectUri +
+          //  '?code=' + response.code +
+          //  (state === undefined ? '' : '&state=' + state);
+          //res.redirect(redirect);
+          if (responseType == 'code') {
+              res.render('authenticate', {
+              authenticateUser: redirectUri+'/?code='+response.code
+            });
+          } else {
+            //let authenticateUser = 'http://google.com';
+             res.render('authimplicit', {code: response.code
+             
+              // authenticateUser: 'https://abe38e48.ngrok.io/token?code='+response.code+'&grant_type=authorization_code'+
+              // '&redirect_uri='+redirectUri+'&client_id='+clientId
 
-        if (redirectUri) {  console.log("if redirect...")
-          var redirect = redirectUri +
-            '?code=' + response.code +
-            (state === undefined ? '' : '&state=' + state);
-          res.redirect(redirect);
+              //() => {
+                // request.post({url:'https://abe38e48.ngrok.io/token',
+                //   form: {
+                //     code: response.code,
+                //     grant_type: 'authorization_code',
+                //     redirect_uri: redirectUri,
+                //     client_id: clientId
+                //   }}, function(error, res, body) {
+                //     if (error) {
+                //       console.error('request failed', error);
+                //     }
+                //     var resp = JSON.parse(body); console.log('TOKEN RESPONSE: '+resp);
+                //     //res.redirect(redirectUri+'/#access_token=' + resp.access_token+'&token_type='+resp.token_type+'&expires_in='+resp.expires_in);
+                //     //res.writeHead(302, {'Location': redirectUri+'/#access_token=' + resp.access_token+'&token_type='+resp.token_type+'&expires_in='+resp.expires_in});
+                //   }
+                  
+                // )
+              //}
+             });
+          }
+          
         } else { console.log("ELSE here...")
           res.json(response);
         }
@@ -100,16 +138,32 @@ router.get('/authorize', function(req, res, next) {
     }
 });
 
+function getToken() {
+  console.log("getToken Called...");
+}
 /* POST 2. Issue Access Token */
-router.post('/token', function(req, res) { console.log(" Token here")
-  var grantType = req.body.grant_type;
-  var refreshToken = req.body.refresh_token;
-  var authCode = req.body.code;
+router.post('/token', function(req, res) { 
+  var grantType = '';
+  var refreshToken = '';
+  var authCode = '';
   var redirectUri = '';
-  var clientId = req.body.client_id;
+  var clientId = '';
+
+if (req.body.grant_type) {
+  grantType = req.body.grant_type;
+  refreshToken = req.body.refresh_token;
+  authCode = req.body.code;
+  redirectUri = '';
+  clientId = req.body.client_id;
+} else {
+  grantType = req.query.grant_type;
+  authCode = req.query.code;
+  redirectUri = req.query.redirect_uri;
+  clientId = req.query.client_id;
+}
+
   //console.log("GrantType: "+grantType +" CLientId: "+clientId+" redirectUri: "+redirectUri);
   
-
   if (!grantType) {
     return errorHandler(new OAuthError('invalid_request',
       'Missing parameter: grant_type'), res);
@@ -278,7 +332,41 @@ router.get('/register', function(req, res, next) {
   
 });
 router.post('/login', function(req, res) {
-  console.log("password is "+req.body.password)
-})
+  //console.log("password is "+req.body.password);
+});
+
+router.get('/login', function(req, res) {
+  res.render('login');
+  
+  
+});
+//var authenticateUser = console.log("DITO ang Token...");
+// var authenticateUser = options.url +
+//     '?redirect_uri=' + options.redirect_uri +
+//     '&user_id=' + options.user_id +
+//     '&client_id=' + options.client_id +
+//     '&response_type=' + options.response_type +
+//     '&state=' + options.state;
+
+router.post('/authenticate', function(req, res, next) {
+  if(req.body.email && req.body.password) { console.log(req.body.email+" "+req.body.password);
+    Client.authenticate(req.body.email, req.body.password, function (error, user) {
+      if (error || !user) {
+        var err = new Error('Wrong email or password.');
+        err.status = 401;
+        return next(err);
+      } else {
+        //req.session.userId = user._id;
+       // res.send("Success! Should have button to authenticate here...");
+        //return res.redirect('/profile');
+        console.log("res ... "+res);
+        res.render('authenticate', {
+          authenticateUser: authenticateUser
+        });
+      }
+    });
+  }
+  
+});
 
 module.exports = router;

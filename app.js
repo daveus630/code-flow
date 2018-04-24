@@ -11,8 +11,8 @@ var app = express();
 
 // set up database connection
 var mongoose = require('mongoose');
-//mongoose.connect('mongodb://admin:david@ds117469.mlab.com:17469/oauthdb')
-mongoose.connect('mongodb://localhost/book')
+mongoose.connect('mongodb://admin:david@ds117469.mlab.com:17469/oauthdb')
+//mongoose.connect('mongodb://localhost/book')
   .then(() => {
     console.log("Connected to mongoDB Database");
   })
